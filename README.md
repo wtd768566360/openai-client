@@ -139,6 +139,12 @@ public class DatabaseOpenAIConfig implements OpenAIConfig {
 先使用数据库的KEY,如果数据库的没有KEY,则使用配置文件的KEY,如果配置文件也没有KEY,将抛出RuntimeException
 ```
 
+### 对接输出时换行符的问题
+
+```java
+//设置你想要的换行符
+chatCompletionRequest.setNewlineCharacter("</br>");
+```
 
 
 

@@ -48,8 +48,7 @@ public class ChatRequestDto implements Serializable {
     @JsonProperty("logit_bias")
     private Map<String, Object> logitBias;
 
-    //换行符
-    private String stop = "/n";
+//    private String stop = "/n";
 
     private String user;
 

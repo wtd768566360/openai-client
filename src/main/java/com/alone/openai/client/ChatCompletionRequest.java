@@ -1,6 +1,7 @@
 package com.alone.openai.client;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alone.openai.client.api.OpenAIAPI;
 import com.alone.openai.client.entity.completion.ChatRequestDto;
 import com.alone.openai.client.entity.completion.ChatResponseDto;
@@ -29,6 +30,9 @@ public class ChatCompletionRequest {
     public final static String DONE = "[DONE]";
 
     public final static String BEARER = "Bearer";
+
+    //换行符
+    private String newLineCharacter = "\\\\n";
 
     private final WebClient webClient;
 
@@ -90,17 +94,7 @@ public class ChatCompletionRequest {
      * @return
      */
     public Flux<ServerSentEvent<String>> sendServerSentEvent(ChatRequestDto request) {
-        String apiKey = "";
-        if (databaseApiKeyList != null && databaseApiKeyList.size() > 0) {
-            //优先使用数据库的key
-            apiKey = RandomUtil.randomEle(databaseApiKeyList);
-        } else if (propertiesApiKeyList != null && propertiesApiKeyList.size() > 0) {
-            //再次使用配置文件的的key
-            apiKey = RandomUtil.randomEle(propertiesApiKeyList);
-        } else {
-            //都没有就报错
-            throw new OpenAIException("没有openai的key,无法启动核心功能");
-        }
+        String apiKey = randomApiKey();
         return send(request, apiKey)
                 .map(string -> {
                     ObjectMapper objectMapper = new ObjectMapper();
@@ -114,7 +108,7 @@ public class ChatCompletionRequest {
                         } catch (JsonProcessingException e) {
                             throw new RuntimeException(e);
                         }
-                        content = chatResponseDto.getChoices().get(0).getDelta().getContent();
+                        content = getNewlineCharacter(chatResponseDto.getChoices().get(0).getDelta().getContent());
                         sseId = chatResponseDto.getId();
                     }
                     return ServerSentEvent.builder(content)
@@ -139,4 +133,45 @@ public class ChatCompletionRequest {
                 .retrieve()
                 .bodyToFlux(String.class);
     }
+
+    /**
+     * 设置新的换行符
+     */
+    public void setNewlineCharacter(String newlineCharacter) {
+        this.newLineCharacter = newlineCharacter;
+    }
+
+    /**
+     * 随机寻轮apikey
+     *
+     * @return
+     */
+    private String randomApiKey() {
+        String apiKey = "";
+        if (databaseApiKeyList != null && databaseApiKeyList.size() > 0) {
+            //优先使用数据库的key
+            apiKey = RandomUtil.randomEle(databaseApiKeyList);
+        } else if (propertiesApiKeyList != null && propertiesApiKeyList.size() > 0) {
+            //再次使用配置文件的的key
+            apiKey = RandomUtil.randomEle(propertiesApiKeyList);
+        } else {
+            //都没有就报错
+            throw new OpenAIException("没有openai的key,无法启动核心功能");
+        }
+        return apiKey;
+    }
+
+    /**
+     * 换行符替换
+     *
+     * @param content
+     * @return
+     */
+    private String getNewlineCharacter(String content) {
+        if (StrUtil.isNotEmpty(content) && content.contains("\n")) {
+            content = content.replaceAll("\n", newLineCharacter);
+        }
+        return content;
+    }
+
 }
