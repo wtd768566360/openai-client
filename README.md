@@ -63,8 +63,10 @@ openai:
     - 你的 API KEY
     - 你的 API KEY
   proxy:
-  host: 代理IP地址
-  port: 代理端口
+    #是否开启代理
+    enabled: false
+    host: 代理IP地址
+    port: 代理端口
 
 ```
 

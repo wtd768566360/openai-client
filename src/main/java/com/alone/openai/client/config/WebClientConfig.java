@@ -25,11 +25,14 @@ public class WebClientConfig {
     @Bean
     public WebClient webClient() {
         // 创建 HttpClient 对象
-        HttpClient httpClient = HttpClient.create()
-                .tcpConfiguration(client -> client.proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP)
-                        .host(openAIProperties.getProxy().getHost())
-                        .port(openAIProperties.getProxy().getPort())));
+        HttpClient httpClient = HttpClient.create();
+        //是否开启代理
+        if (openAIProperties.getProxy().isEnabled()) {
+            httpClient = httpClient.tcpConfiguration(client -> client.proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP)
+                    .host(openAIProperties.getProxy().getHost())
+                    .port(openAIProperties.getProxy().getPort())));
 
+        }
         // 创建 ClientHttpConnector 对象
         ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
 

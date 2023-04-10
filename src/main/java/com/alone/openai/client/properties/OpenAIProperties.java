@@ -15,6 +15,8 @@ public class OpenAIProperties {
 
     @Data
     public static class Proxy {
+        //是否启动代理
+        private boolean enabled;
         //代理IP
         private String host;
         //代理端口
