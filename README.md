@@ -1,8 +1,13 @@
 # ChatGPT Java Client
 
-OpenAI ChatGPT 的客户端封装。欢迎指教
+#### OpenAI ChatGPT 的客户端封装。欢迎指教
 
 #### 欢迎加入技术讨论群,QQ群:558133902
+
+# 成果展示
+
+#### 基于此客户端实现的项目
+#### http://chat.niitcxl.cn/
 
 # 技术实现
 
