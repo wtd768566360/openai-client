@@ -1,4 +1,4 @@
-package com.alone.openai.client;
+package com.alone.openai.client.chat;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -22,10 +22,11 @@ import java.util.List;
 
 
 /**
- * 请求
+ * 请求,以sse的模式转发流返回
+ * 也可以直接返回flux<string>
  */
 @Component
-public class ChatCompletionRequest {
+public class CompletionSend {
 
     public final static String DONE = "[DONE]";
 
@@ -36,12 +37,12 @@ public class ChatCompletionRequest {
 
     private final WebClient webClient;
 
-    private List<String> propertiesApiKeyList;
+    private final List<String> propertiesApiKeyList;
 
-    private List<String> databaseApiKeyList;
+    private final List<String> databaseApiKeyList;
 
-    public ChatCompletionRequest(WebClient webClient, @Qualifier("properties-api-keys") List<String> propertiesApiKeyList,
-                                 @Qualifier("database-api-keys") List<String> databaseApiKeyList) {
+    public CompletionSend(WebClient webClient, @Qualifier("properties-api-keys") List<String> propertiesApiKeyList,
+                          @Qualifier("database-api-keys") List<String> databaseApiKeyList) {
         this.webClient = webClient;
         this.propertiesApiKeyList = propertiesApiKeyList;
         this.databaseApiKeyList = databaseApiKeyList;
@@ -116,6 +117,63 @@ public class ChatCompletionRequest {
                             .retry(Duration.ofSeconds(5))
                             .build();
                 });
+    }
+
+    /**
+     * 使用user权限发送
+     * 返回flux
+     *
+     * @param message
+     * @return
+     */
+    public Flux<String> send(String message) {
+        ChatRequestDto request = new ChatRequestDto();
+        request.pushMessage(ChatRequestDto.Role.USER.getName(), message);
+        return send(request);
+    }
+
+    /**
+     * 携带上下文发送
+     * 返回flux
+     *
+     * @param messages
+     * @return
+     */
+    public Flux<String> send(List<ChatRequestDto.Message> messages) {
+        ChatRequestDto request = new ChatRequestDto();
+        for (ChatRequestDto.Message message : messages) {
+            request.pushMessage(message);
+        }
+        return send(request);
+    }
+
+    /**
+     * 携带上下文发送
+     * 返回flux
+     *
+     * @param request
+     * @return
+     */
+    public Flux<String> send(ChatRequestDto request) {
+        String apiKey = randomApiKey();
+        return send(request, apiKey).map(s -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 将 JSON 字符串转换为 Java 对象
+            String content = DONE;
+            if (!DONE.equals(s)) {
+                ChatResponseDto chatResponseDto = null;
+                try {
+                    chatResponseDto = objectMapper.readValue(s, ChatResponseDto.class);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+                content = chatResponseDto.getChoices().get(0).getDelta().getContent();
+                if (content == null) {
+                    content = "";
+                }
+            }
+            return content;
+        });
     }
 
     /**

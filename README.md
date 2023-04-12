@@ -78,30 +78,46 @@ openai:
 #### controller 简单发送代码
 
 ```java
-private ChatCompletionRequest chatCompletionRequest;
+private CompletionSend completionSend;
 
-public ChatController(ChatCompletionRequest chatCompletionRequest){
-        this.chatCompletionRequest=chatCompletionRequest;
-        }
-
+public ChatController(CompletionSend completionSend){
+        this.completionSend=completionSend;
+}
+/**
+ * 返回Flux<ServerSentEvent<String>>
+ */
 @GetMapping("search")
 public Flux<ServerSentEvent<String>>search(@RequestParam String message){
         //chatCompletionRequest拥有好几个可用接口,此处只演示一个
-        return chatCompletionRequest.sendServerSentEventByUser(message);
-        }
+        return completionSend.sendServerSentEventByUser(message);
+}
+
+/**
+ * 返回Flux<String>
+ */
+@Operation(summary = "最简单的AI搜索")
+@GetMapping("search")
+public Flux<String> search(@RequestParam String message) {
+        return completionSend.send(message);
+}
+
+        
 ```
 
 #### controller 携带上下文发送代码
 
 ```java
-private ChatCompletionRequest chatCompletionRequest;
+private CompletionSend completionSend;
 
-public ChatController(ChatCompletionRequest chatCompletionRequest){
-        this.chatCompletionRequest=chatCompletionRequest;
-        }
+public ChatController(CompletionSend completionSend){
+        this.completionSend=completionSend;
+}
 
+/**
+ * 返回Flux<ServerSentEvent<String>>
+ */
 @GetMapping("context/search")
-public Flux<ServerSentEvent<String>>search(){
+public Flux<ServerSentEvent<String>> search(){
         //此处直接写死因为简单粗暴简单易理解;真实使用,需要根据前端传递参数哦.
         //此处messages是本次聊天的所有聊天记录上下文
         List<ChatRequestDto.Message> messages=new ArrayList<>();
@@ -113,6 +129,16 @@ public Flux<ServerSentEvent<String>>search(){
         messages.add(new ChatRequestDto.Message(ChatRequestDto.Role.USER.getName(), "你可以干嘛"));
         return chatCompletionRequest.sendServerSentEvent(messages);
 }
+
+/**
+ * 返回Flux<String>
+ */
+@Operation(summary = "关联上下文的AI搜索")
+@PostMapping(value = "context/search")
+public Flux<String> search(@RequestBody List<ChatRequestDto.Message> messages) {
+        return completionSend.send(messages);
+}
+
 ```
 
 ### 读取数据库的KEY
@@ -150,7 +176,8 @@ public class DatabaseOpenAIConfig implements OpenAIConfig {
 
 ```java
 //设置你想要的换行符
-chatCompletionRequest.setNewlineCharacter("</br>");
+completionSend.setNewlineCharacter("</br>");
+
 ```
 
 
